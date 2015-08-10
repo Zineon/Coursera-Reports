@@ -1,0 +1,136 @@
+---
+output: pdf_document
+---
+# Regression Models Course Project
+By Neelajit Chandra
+
+
+
+## Executive Summary
+
+In this project, the mtcars data set was analyzed and the relationship between a set of variables against miles per gallon (MPG) was explored. 
+
+
+The main objectives of this research are as follows:  
+- Is an automatic or manual transmission better for MPG?  
+- Quantifying how different is the MPG between automatic and manual transmissions?
+
+The key takeway from the analysis was:  
+- Manual transmission is better for MPG by a factor of 1.8 compared to automatic transmission.  
+- Means and medians for automatic and manual transmission cars are significantly different.
+
+
+## Data pre-processing and transformation
+
+```{r}
+
+# Loading the data set
+data("mtcars")
+```
+
+```{r, eval = FALSE}
+
+# Examining the data set: Results in Appendix
+str(mtcars)
+
+```
+
+```{r}
+
+# Changing classes of variables to factor
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+mtcars$am <- factor(mtcars$am, labels = c("Automatic", "Manual"))
+
+```
+
+
+## Exploratory data analysis
+
+```{r}
+library(ggplot2)
+
+means <- aggregate(mpg ~ am, mtcars, function(x) round(median(x),2))
+
+# Boxplot of mpg vs. transmission type: Shown in Appendix
+plot <- ggplot(mtcars, aes(am, mpg)) + 
+  geom_boxplot(aes(fill = am)) + 
+  xlab("Transmission Type") + ylab("Miles Per Gallon") + 
+  geom_text(data = means, aes(label = mpg), vjust = 1)
+
+```
+
+
+## Regression Analysis
+
+A linear regression model was built using all the other variables, with mpg as the outcome. The best model of them was chosen using the 'step' function.
+
+```{r}
+
+init_model <- lm(mpg ~ ., data = mtcars)
+best_model <- step(init_model, direction = "both", trace = FALSE)
+
+# Summary of the model: Shown in appendix
+summ <- summary(best_model)
+
+```
+
+The observations of the analysis are as follows:  
+- This method determines that the best model includes the cyl6, cyl8, hp, wt, and amManual variables (overall p-value<0.001). The adjusted R-squared indicates that about 84% of the variance is explained by the final model.  
+- The output of this model suggests that mpg decreases with respect to cylinders (-3.03 and -2.16 for cyl6 and cyl8, respectively), horsepower (-0.03), and weight (for every 1,000lb, by -2.5).  
+- The mpg increases with respect to having a manual transmission (by 1.8). 
+
+
+## Inference
+
+A t-test was performed, assuming that the transmission data has a normal distribution. The results show that the automatic and manual transmissions are significantly different.
+
+```{r}
+
+t.test(mpg ~ am, data = mtcars)
+
+```
+
+
+## Conclusion
+
+Based on the observations from our best fit model, we can conclude the following,
+
+- Cars with `Manual` transmission get more miles per gallon `mpg` compared to cars with `Automatic` transmission. (1.8 adjusted by `hp`, `cyl`, and `wt`).  
+- `mpg` will decrease by 2.5 (adjusted by `hp`, `cyl`, and `am`) for every 1000 lb increase in `wt`.  
+- `mpg` decreases negligibly with increase of `hp`.  
+- If the number of cylinders, `cyl` increases from 4 to 6 and 8, `mpg` will decrease by a factor of 3 and 2.2 respectively (adjusted by `hp`, `wt`, and `am`).
+
+
+## Appendix
+
+```{r}
+
+# Structure of the data set
+str(mtcars)
+
+# Summary of the best model
+summ
+
+# Boxplot of Miles per Gallon vs. Transmission Type
+plot
+
+```
+
+
+**Residuals and Diagnotics**
+
+The residual plots were generated and some of the corresponding observations with regard to the various plots have been reported:  
+- The points in the Residuals vs. Fitted plot seem to be randomly scattered on the plot and verify the independence condition.  
+- The Normal Q-Q plot consists of the points which mostly fall on the line indicating that the residuals are normally distributed.  
+- The Scale-Location plot consists of points scattered in a constant band pattern, indicating constant variance.  
+- There are some distinct points of interest (outliers or leverage points) in the top right of the plots.  
+
+```{r}
+
+par(mfrow = c(2,2), mar = c(2,0.5,2,0.5)+0.05, oma = c(0,0,0,0))
+plot(best_model)
+
+```

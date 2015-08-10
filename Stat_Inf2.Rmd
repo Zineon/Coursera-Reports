@@ -1,0 +1,116 @@
+---
+output: pdf_document
+---
+# Statistical Inference Course Project: Part 2
+By Neelajit Chandra
+
+
+## Overview
+
+The aim of this project is to analyze the ToothGrowth data in the R datasets package. The report includes:  
+- Basic exploratory data analyses.  
+- Brief summary of the data.  
+- Using confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose.  
+- Conclusions and the corresponding assumptions needed for the same.
+
+
+## Loading and pre-processing the data
+
+```{r}
+
+# Loading the data set
+data("ToothGrowth")
+
+# Examining the data set
+str(ToothGrowth)
+head(ToothGrowth)
+
+# Changing the class of the variable 'dose' to factor
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+
+# Summarizing the data
+summary(ToothGrowth)
+
+```
+
+
+## Exploratory data analysis
+
+```{r}
+library(ggplot2)
+
+# Effect of supplement on tooth length
+tapply(ToothGrowth$len, ToothGrowth$supp, mean)
+
+# Boxplot of supplement vs. tooth length
+ggplot(aes(x = supp, y = len), data = ToothGrowth) +
+  geom_boxplot(aes(fill = supp)) +
+  xlab("Supplement type") +ylab("Tooth length") 
+
+# Effect of dosage on tooth length
+tapply(ToothGrowth$len, ToothGrowth$dose, mean)
+
+# Boxplot of dosage vs. tooth length
+ggplot(aes(x = dose, y = len), data = ToothGrowth) +
+  geom_boxplot(aes(fill = dose)) +
+  xlab("Dose") +ylab("Tooth length")
+```
+
+
+## Inferential Statistics
+
+Hypothesis tests and confidence intervals have been used to predominantly answer two questions:  
+1. Do the tooth length of the guinea pigs depend on delivery methods?  
+2. Do the tooth length of the guinea pigs depend on the dosage level?
+
+```{r}
+
+len<-ToothGrowth$len
+supp<-ToothGrowth$supp
+dose<-ToothGrowth$dose
+
+```
+
+A t-test has been used to test the hypothesis of whether the tooth lengths of guinea pigs depend on method of delivery.
+
+```{r}
+
+t.test(len[supp == "OJ"], len[supp == "VC"], paired = FALSE, var.equal = FALSE)
+
+```
+
+The p-value of this test is 0.06, which is quite close to the significance level of 5%. It can be interpreted as a lack of enough evidence to reject the null hypothesis, but we also need to consider that the significance value of 0.05 is only a convenience value in addition to the fact that the confidence interval of the test contains zero (0).
+
+
+T-tests have been used to test the hypothesis of whether the tooth lengths of guinea pigs depend on the dosage.
+
+```{r}
+
+t.test(len[dose == 2], len[dose == 1], paired = FALSE, var.equal = TRUE)
+
+```
+
+The p-value of this test is negligibly small and can be approximated to 0, which is evidence that the null hypothesis can be rejected. Hence, we can conclude that change of dose from 1mg to 2mg effects the tooth length positively. Also, the confidence interval does not contain zero (0). 
+
+```{r}
+
+t.test(len[dose == 1], len[dose == 0.5], paired = FALSE, var.equal = TRUE)
+
+```
+
+The p-value of this test is negligibly small and can be approximated to 0, which is evidence that the null hypothesis can be rejected. Hence, we can conclude that change of dose from 1mg to 2mg effects the tooth length positively. Also, the confidence interval does not contain zero (0). 
+
+A similar t-test can be carried out for the two dose levels of 2 and 0.5 which would lead to the same conclusion that an increase in dosage has a positive effect on tooth growth.
+
+## Conclusions and Assumptions
+
+**Conclusions**
+
+- Supplement type has no effect on the tooth growth.
+- Increase in dosage leads to an increase in tooth growth.
+
+**Assumptions**
+
+- The experiment design suggest that each Guinea pig was randomly assigned to a combination of dosage and supplement type, so the test that we performed used the independent samples methodology.
+- The sample of 60 Guinea pigs is assumed to be representative of all Guinea pigs, so as to generalize the conclusions to the population.
+- For t-test regarding tooth length per supplement type, the variances are assumed to be different for the two groups being compared. For t-tests regarding tooth length per dosage level, the variances are assumed to be equal for the three combinations of the two groups being compared.

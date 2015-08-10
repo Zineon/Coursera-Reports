@@ -1,0 +1,135 @@
+---
+output: html_document
+---
+# Reproducible Research Peer Assessment - 2
+Neelajit Chandra
+
+# Impact of Severe Weather Events on Public Health and Economy in the United States
+
+
+## Synopsis
+
+The aim of this report is to analyze the impact of different weather events on public health and economy based on the storm database collected from the U.S. National Oceanic and Atmospheric Administration's (NOAA) from 1950 - 2011. The estimates of fatalities, injuries, property and crop damage have been used to decide which types of event are most harmful to the population health and economy. From these data, it has been found that excessive heat and tornado are most harmful with respect to population health, while flood, drought, and hurricane/typhoon have the greatest economic consequences.
+
+
+## Data Processing
+
+Reading the file into a cached data frame
+
+```{r, cache = TRUE}
+
+# Loading the data set
+storm <- read.csv("repdata_data_StormData.csv.bz2")
+
+# Examining the variables
+str(storm)
+
+```
+
+
+## Impact of Weather Events on Health
+
+```{r}
+
+# Extracting health events from the data set
+health_impact <- aggregate(cbind(storm$INJURIES, storm$FATALITIES) ~ storm$EVTYPE, data = storm, FUN = sum)
+
+colnames(health_impact) <- c("Type", "Injuries", "Fatalities")
+
+# Summing the impact of injuries and fatalities
+health_impact$Total <- health_impact$Injuries + health_impact$Fatalities
+
+# Reordering the events by their total impact levels
+health_impact <- health_impact[with(health_impact, order(-Total)), ]
+
+head(health_impact)
+
+```
+
+
+## Impact of Weather Events on Economy
+
+The impact of weather events on economy was calculated by taking into account the different levels of damages to property and crops. A multiplier function was created to estimate the values by their respective denominations, which was used to calculate the total damages.
+
+```{r}
+
+# Creating a multiplier function to estimate the impact of the events by their respective units/levels
+
+multiplier <- function(m) {
+    if (m %in% c('H', 'h'))
+        return (100)
+    else if (m %in% c('K', 'k'))
+        return (1000)
+    else if (m %in% c('M', 'm'))
+        return (1000000)
+    else if (m %in% c('B', 'b'))
+        return (1000000000)
+    else if (!is.na(as.numeric(m))) 
+        return (as.numeric(m) * 10)
+    else 
+        return(1)
+}
+
+```
+
+
+**Estimating Damages by Property and Crops**
+
+```{r}
+
+# Estimating damages to property using the multiplier function
+property_damage_multiplier <- sapply(storm$PROPDMGEXP, FUN = multiplier)
+
+# Calculating total property damage
+storm$total_property_damage <- storm$PROPDMG * property_damage_multiplier
+
+# Estimating damages to crops using the multiplier function
+crop_damage_multiplier <- sapply(storm$CROPDMGEXP, FUN = multiplier)
+
+# Calculating total crop damage
+storm$total_crop_damage <- storm$CROPDMG * crop_damage_multiplier
+
+```
+
+
+**Estimating Total Impact on Economy by Events**
+
+```{r}
+
+# Extracting economic events from the data set
+economic_impact <- aggregate(cbind(storm$total_property_damage, storm$total_crop_damage) ~ storm$EVTYPE, data = storm, FUN = sum)
+
+colnames(economic_impact) <- c("Type", "Property", "Crop")
+
+# Summing the impact on property and crops
+economic_impact$Total <- economic_impact$Property + economic_impact$Crop
+
+# Reordering the events by their total impact levels
+economic_impact <- economic_impact[with(economic_impact, order(-Total)), ]
+
+head(economic_impact)
+
+```
+
+
+
+## Results
+
+The impact of various events on health and economy were plotted and the corresponding observations have been reported.
+
+```{r}
+
+library(ggplot2)
+
+# Barplot of the most dangerous weather events by Impact on Health
+ggplot(data = head(health_impact), aes(x = reorder(Type, -Total), y = Total / 10^3)) + geom_bar(stat = "identity") + labs( x = "Event Type", y = "Total number of injuries and fatalities in thousands", title = "Most Dangerous Weather Events in US by Health") + theme(axis.text.x = element_text(angle = 90))
+
+# Barplot of the most dangerous weather events by Economic Impact
+ggplot(data = head(economic_impact), aes(x = reorder(Type, -Total), y = Total / 10^9)) + geom_bar(stat = "identity") + labs( x = "Event Type", y = "Total Damage in Billions", title = "Most Dangerous Weather Events in US by Economy") + theme(axis.text.x = element_text(angle = 90))
+
+```
+
+From the analysis performed and the above barplots, it can be concluded that:
+
+- Tornados have caused the greatest number of fatalities - 5,661 and injuries - 91,407 followed by Heat in terms of fatalities 3,138 (9,224 injuries slightly less than Thunderstorm Wind 9,493 injuries which is the second harrmful cause in terms of injuries).  
+- Floods have caused the most significant economic damage 157,764,680,787 USD (combined for property loss and crops damage) followed by Hurricanes and Typhoons - 44,330,000,800 USD

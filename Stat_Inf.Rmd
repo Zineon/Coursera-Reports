@@ -1,0 +1,85 @@
+---
+output: pdf_document
+---
+# Statistical Inference Course Project: Part 1
+By Neelajit Chandra
+
+
+## Overview
+
+The aim of this project is to investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with `rexp(n, lambda)` where
+`lambda` is the rate parameter. The mean of exponential distribution is `1/lambda` and the standard deviation is also `1/lambda`. For this simulation, we set `lambda=0.2`. In this simulation, we investigate the distribution of averages of 40 numbers sampled from exponential distribution with `lambda=0.2`.
+
+
+## Simulations
+
+One thousand simulated averages of 40 exponentials have been calculated.
+
+```{r}
+set.seed(10)
+
+lambda <- 0.2
+num_sim <- 1:1000
+sample_size <- 40
+
+Means <- data.frame(x = sapply(num_sim, function(x) {
+  mean(rexp(sample_size, lambda))
+}))
+```
+
+The distribution of sample means is as follows.
+
+```{r}
+library(ggplot2)
+
+# Theoretical Mean of distribution
+th_mean <- 1/lambda
+th_mean
+
+# Sample Mean 
+sim_mean <- mean(Means$x)
+sim_mean
+
+# Theoretical Variance of the distribution
+th_var <- ((1/lambda)/sqrt(sample_size))^2
+th_var
+
+# Sample Variance
+sim_var <- var(Means$x)
+sim_var
+
+# Plot of the histogram of means indicating the theoretical and sample values
+ggplot(data = Means, aes(Means$x)) + geom_histogram(binwidth = 0.1) +
+  geom_vline(mapping = aes(xintercept = c(1/lambda, mean(Means$x)),
+                           linetype = c("Theoretical", "Simulated")),
+             col = c("blue", "red"), show_guide = TRUE)
+
+```
+
+The distribution of sample means is centered at `r sim_mean`
+and the theoretical center of the distribution is `r 1/lambda`.
+
+The standard deviation of sample means is `r sd(Means$x)` whereas the expected standard deviation of the distribution is `r (1/lambda)/sqrt(40)`.
+
+The variance of sample means is `r sim_var` whereas the theoretical variance of the distribution is `r ((1/lambda)/sqrt(40))^2`.
+
+
+**Solutions**
+
+1. The expected center (5.0) is very close to the distribution (`r mean(Means$x)`).  
+
+2. The sample standard deviation (`r sd(Means$x)`) is also close to the expected standard deviation (0.7909).
+
+
+## Distribution
+
+From the plot of the distribution of sample means, we observe that it may be approximated as a normal distribution (with mean = 5 and standard deviation = 0.7909).
+
+```{r}
+
+ggplot(data = Means, aes(x = x)) +
+  geom_histogram(aes(y = ..density..), fill = I("royalblue"),
+                 binwidth = 0.2, color = I("black")) +
+  stat_function(fun = dnorm, arg = list(mean = 5, sd = sd(Means$x)))
+
+```
